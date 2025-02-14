@@ -1,6 +1,6 @@
 numpy==1.23
 opencv-python-headless==4.9.0.80
-torch==2.1.0
+torch==2.4.1
 transformers
 timm
 matplotlib

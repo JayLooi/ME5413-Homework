@@ -1,17 +1,12 @@
 import os
 import cv2
 import numpy as np
-from utils import get_bbox_points, draw_bbox
 
 
 class AbstractObjectTraker:
-    def __init__(self, template=None):
-        self.set_template(template)
+    def __init__(self):
         self._frame_seq = None
         self._seq_track_result = []
-
-    def set_template(self, template):
-        self._template = template
 
     def track(self, frame):
         raise NotImplementedError('track() method is not implemented by the derived class')
@@ -53,12 +48,14 @@ class AbstractObjectTraker:
         tracked_bbox_colour = (0, 255, 0)
         for i, img_path in enumerate(self._frame_seq):
             frame = cv2.imread(img_path)
-            top_left, bottom_right = get_bbox_points(self._seq_track_result[i])
-            frame = draw_bbox(frame, top_left, bottom_right, tracked_bbox_colour, 2, 'Tracked')
+            bbox_pts = self._get_bbox_points(self._seq_track_result[i])
+            if bbox_pts is not None:
+                top_left, bottom_right = bbox_pts
+                frame = self._draw_bbox(frame, top_left, bottom_right, tracked_bbox_colour, 2, 'Tracked')
 
             if with_gt:
-                top_left, bottom_right = get_bbox_points(groundtruth[i])
-                frame = draw_bbox(frame, top_left, bottom_right, gt_bbox_colour, 2, 'Ground truth')
+                top_left, bottom_right = self._get_bbox_points(groundtruth[i])
+                frame = self._draw_bbox(frame, top_left, bottom_right, gt_bbox_colour, 2, 'Ground truth')
 
             writer.write(frame)
 
@@ -98,15 +95,8 @@ class AbstractObjectTraker:
     def _calculate_success(self, groundtruth, threshold=None):
         results = []
         for gt, tracked in zip(groundtruth, self._seq_track_result):
-            intersection = self._find_intersection(gt, tracked)
-            if intersection is not None:
-                _, _, w, h = intersection
-                intersect_area = w * h
-                union = gt[2] * gt[3] + tracked[2] * tracked[3] - intersect_area
-                results.append(intersect_area / union)
-
-            else:
-                results.append(0)
+            iou = self._iou(gt, tracked)
+            results.append(iou)
 
         results = np.array(results)
 
@@ -119,6 +109,42 @@ class AbstractObjectTraker:
     def _read_bbox(bbox_fp):
         bbox = np.loadtxt(bbox_fp, dtype=np.uint32, delimiter=',')
         return bbox
+
+    @staticmethod
+    def _get_bbox_points(bbox):
+        top_left = bbox[0:2]
+        bbox_w, bbox_h = bbox[2:4]
+        if (bbox_w == 0) or (bbox_h == 0):
+            return
+
+        bottom_right = (top_left[0] + bbox_w - 1, top_left[1] + bbox_h - 1)
+        return top_left, bottom_right
+
+    @staticmethod
+    def _draw_bbox(img, top_left, bottom_right, colour, thickness, label=None):
+        img_h, img_w = img.shape[0:2]
+        img = cv2.rectangle(img, top_left, bottom_right, colour, thickness)
+        if label is not None:
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            font_scale = 0.75
+            label_thickness = 2
+            label_bg_colour = (0, 0, 0)
+            label_text_colour = (255, 255, 255)
+            (label_width, label_height), baseline = cv2.getTextSize(label, font, 
+                                                                    font_scale, 
+                                                                    label_thickness)
+
+            # Draw background of label
+            lbl_box_topleft = (top_left[0], max(0, top_left[1] - label_height - baseline))
+            lbl_box_bottomright = (min(img_w - 1, top_left[0] + label_width), top_left[1])
+            img = cv2.rectangle(img, lbl_box_topleft, lbl_box_bottomright, label_bg_colour, -1)  # -1 implies filled rectangle
+
+            # Draw label text
+            label_org = (top_left[0], max(0, lbl_box_bottomright[1] - baseline // 2))
+            img = cv2.putText(img, label, label_org, font, font_scale, 
+                                label_text_colour, label_thickness)
+
+            return img
 
     @staticmethod
     def _find_intersection(bbox_1, bbox_2):
@@ -152,3 +178,15 @@ class AbstractObjectTraker:
         h = min(y1 + h1, y2 + h2) - y + 1
 
         return x, y, w, h
+
+    @staticmethod
+    def _iou(bbox_1, bbox_2):
+        intersection = AbstractObjectTraker._find_intersection(bbox_1, bbox_2)
+        if intersection is None:
+            return 0
+
+        _, _, w, h = intersection
+        intersect_area = w * h
+        union = bbox_1[2] * bbox_1[3] + bbox_2[2] * bbox_2[3] - intersect_area
+        iou = intersect_area / union
+        return iou

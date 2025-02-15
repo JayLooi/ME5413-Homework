@@ -24,7 +24,8 @@ def _parse_kwargs(kwargs, params, default_values):
 def run(method, tracker, data_id, **kwargs):
     TMPL_MATCH = 'template-matching'
     NEURAL_NET = 'neural-net'
-    method_choices = (TMPL_MATCH, NEURAL_NET)
+    TMPL_MATCH_FOCUSED_SEARCH = 'template-matching-focused-search'
+    method_choices = (TMPL_MATCH, NEURAL_NET, TMPL_MATCH_FOCUSED_SEARCH)
     if method not in method_choices:
         raise ValueError(f'Unknown SOT method {method}')
 
@@ -45,7 +46,7 @@ def run(method, tracker, data_id, **kwargs):
     # parse common args
     precision_thres, iou_thres = _parse_kwargs(kwargs, ('precision_thres', 'iou_thres'), (20, 0.5))
 
-    if method == TMPL_MATCH:
+    if (method == TMPL_MATCH) or (method == TMPL_MATCH_FOCUSED_SEARCH):
         if not isinstance(tracker, TemplateMatchingTracker):
             raise TypeError(f'Incorrect tracker type for {method} method, '
                             'expects \'TemplateMatchingTracker\' but got '
@@ -57,7 +58,11 @@ def run(method, tracker, data_id, **kwargs):
             raise ValueError(f'Unknown template matching mode {mode}')
 
         # Results path
-        results_folder = f'{script_dir}/results/1_template_matching/{mode}'
+        if method == TMPL_MATCH:
+            results_folder = f'{script_dir}/results/1_template_matching/{mode}'
+        else:
+            results_folder = f'{script_dir}/results/3_improved/{mode}'
+
         if not os.path.isdir(results_folder):
             os.makedirs(results_folder)
 
@@ -65,12 +70,15 @@ def run(method, tracker, data_id, **kwargs):
 
         # Crop template from firsttrack bbox
         x, y, w, h = bbox
-        first_frame = cv2.cvtColor(cv2.imread(images_fp[0]), cv2.COLOR_BGR2RGB)
+        first_frame = cv2.imread(images_fp[0])
         template = first_frame[y:y+h, x:x+w, :]
 
         # Run the tracking algorithm
         tracker.set_template(template)
         tracker.set_mode(mode)
+
+        if method == TMPL_MATCH_FOCUSED_SEARCH:
+            tracker.set_search_region(bbox, 100, 50)
 
     elif method == NEURAL_NET:
         if not isinstance(tracker, NeuralNetObjectTracker):
@@ -104,3 +112,7 @@ def run(method, tracker, data_id, **kwargs):
         print(f'Seq={data_id}, tm mode={mode}, precision={precision}, success={success}')
     elif method == NEURAL_NET:
         print(f'Seq={data_id}, detection_thres={det_thres}, precision={precision}, success={success}')
+    elif method == TMPL_MATCH_FOCUSED_SEARCH:
+        print(f'Seq={data_id}, tm mode={mode}, precision={precision}, success={success}')
+
+    return precision, success

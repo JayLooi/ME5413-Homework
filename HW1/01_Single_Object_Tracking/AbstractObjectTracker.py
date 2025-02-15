@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 
 
-class AbstractObjectTraker:
+class AbstractObjectTracker:
     def __init__(self):
         self._frame_seq = None
         self._seq_track_result = []
@@ -181,7 +181,7 @@ class AbstractObjectTraker:
 
     @staticmethod
     def _iou(bbox_1, bbox_2):
-        intersection = AbstractObjectTraker._find_intersection(bbox_1, bbox_2)
+        intersection = AbstractObjectTracker._find_intersection(bbox_1, bbox_2)
         if intersection is None:
             return 0
 

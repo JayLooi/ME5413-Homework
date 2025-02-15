@@ -1,9 +1,9 @@
 import os
 from transformers import AutoImageProcessor, DetrForObjectDetection
-from AbstractObjectTracker import AbstractObjectTraker
+from AbstractObjectTracker import AbstractObjectTracker
 
 
-class NeuralNetObjectTracker(AbstractObjectTraker):
+class NeuralNetObjectTracker(AbstractObjectTracker):
     def __init__(self):
         super().__init__()
         module_dir = os.path.dirname(os.path.realpath(__file__))

@@ -1,8 +1,8 @@
 import cv2
-from AbstractObjectTracker import AbstractObjectTraker
+from AbstractObjectTracker import AbstractObjectTracker
 
 
-class TemplateMatchingTracker(AbstractObjectTraker):
+class TemplateMatchingTracker(AbstractObjectTracker):
     _TM_MODES = {
         'sqdiff': cv2.TM_SQDIFF,
         'sqdiff_normed': cv2.TM_SQDIFF_NORMED,

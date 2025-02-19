@@ -8,7 +8,7 @@ def run(mode, data, current_timestep, dt, future_seconds):
     model = MotionModel(mode)
     tracks = data['predict_list']
     agents_of_interest = data['all_agent'][tracks]
-    past_trajs = agents_of_interest[:, :11]
+    past_trajs = agents_of_interest[:, :current_timestep+1]
 
     horizon = int(future_seconds / dt)
     start_predict_timestep = current_timestep + 1
@@ -35,7 +35,7 @@ def run(mode, data, current_timestep, dt, future_seconds):
     return ade, fde, valid_pred, valid_gt
 
 
-def visualise(data, current_timestep, predicted, groundtruth, save=False):
+def visualise(data, current_timestep, predicted, groundtruth, save=False, file_prefix=None):
     road_polylines = data['road_polylines']
     scenario_id = data['scenario_id']
     sdc_track_id = data['sdc_track_index']
@@ -96,7 +96,30 @@ def visualise(data, current_timestep, predicted, groundtruth, save=False):
     ax.axis([-70+ sdc_current_state[0], 70+ sdc_current_state[0], -70+ sdc_current_state[1], 70 + sdc_current_state[1]])
 
     if save:
-        filename = f'visualization/{scenario_id}.png'
+        if file_prefix is not None:
+            filename = f'visualization/{file_prefix}_{scenario_id}.png'
+        else:
+            filename = f'visualization/{scenario_id}.png'
+
         plt.savefig(filename)
 
     plt.show()
+
+
+def inspect_groundtruth_trajectory(trajectory, dt):
+    t = 0
+    time = []
+    vel_x = []
+    vel_y = []
+
+    for i in range(len(trajectory)):
+        if trajectory[i][9] == 1:
+            time.append(t)
+            vel_x.append(trajectory[i][7])
+            vel_y.append(trajectory[i][8])
+
+        t += dt
+
+    plt.plot(time, vel_x, color='b', label='vel_x')
+    plt.plot(time, vel_y, color='r', label='vel_y')
+    plt.legend(loc="upper right")

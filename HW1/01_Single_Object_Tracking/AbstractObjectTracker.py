@@ -112,7 +112,7 @@ class AbstractObjectTracker:
 
     @staticmethod
     def _get_bbox_points(bbox):
-        top_left = bbox[0:2]
+        top_left = tuple(bbox[0:2])
         bbox_w, bbox_h = bbox[2:4]
         if (bbox_w == 0) or (bbox_h == 0):
             return

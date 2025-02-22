@@ -133,18 +133,23 @@ def mean_dist(point_cloud1, point_cloud2):
         
     return np.mean(np.array(dis_array))
 
-def main():
+def main(task):
     print('start hw program')
     pcd1 = o3d.io.read_point_cloud('bunny1.ply') # change to your file path
     pcd2 = o3d.io.read_point_cloud('bunny2.ply') # change to your file path
     points1 = np.array(pcd1.points)
     points2 = np.array(pcd2.points)
 
-    # uncomment the lines following task 1 or 2 to run the corresponding task
-    # task 1:
-    solve_icp_with_known_correspondence(points1, points2)
-    # task 2:
-    # solve_icp_without_known_correspondence(points1, points2, n_iter=30, threshold=0.1)
+    if task == 1:
+        solve_icp_with_known_correspondence(points1, points2)
+    elif task == 2:
+        solve_icp_without_known_correspondence(points1, points2, n_iter=30, threshold=0.1)
+
 
 if __name__ == '__main__':
-    main()
+    import argparse as ap
+    parser = ap.ArgumentParser()
+    parser.add_argument('-t', '--task', type=int, required=True)
+    args = parser.parse_args()
+
+    main(args.task)

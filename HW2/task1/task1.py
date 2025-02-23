@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import open3d as o3d
 import datetime
@@ -133,23 +134,28 @@ def mean_dist(point_cloud1, point_cloud2):
         
     return np.mean(np.array(dis_array))
 
-def main(task):
+def main(task, data_dir):
     print('start hw program')
-    pcd1 = o3d.io.read_point_cloud('bunny1.ply') # change to your file path
-    pcd2 = o3d.io.read_point_cloud('bunny2.ply') # change to your file path
-    points1 = np.array(pcd1.points)
-    points2 = np.array(pcd2.points)
+    reference_pcd_path = os.path.join(data_dir, 'bunny1.ply')
+    new_scan_pcd_path = os.path.join(data_dir, 'bunny2.ply')
+
+    pcd_ref = o3d.io.read_point_cloud(reference_pcd_path)
+    pcd_newscan = o3d.io.read_point_cloud(new_scan_pcd_path)
+
+    points_ref = np.array(pcd_ref.points)
+    points_newscan = np.array(pcd_newscan.points)
 
     if task == 1:
-        solve_icp_with_known_correspondence(points1, points2)
+        solve_icp_with_known_correspondence(points_ref, points_newscan)
     elif task == 2:
-        solve_icp_without_known_correspondence(points1, points2, n_iter=30, threshold=0.1)
+        solve_icp_without_known_correspondence(points_ref, points_newscan, n_iter=30, threshold=0.1)
 
 
 if __name__ == '__main__':
     import argparse as ap
     parser = ap.ArgumentParser()
     parser.add_argument('-t', '--task', type=int, required=True)
+    parser.add_argument('-d', '--data-dir', required=True)
     args = parser.parse_args()
 
-    main(args.task)
+    main(args.task, args.data_dir)

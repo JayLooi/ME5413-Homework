@@ -3,18 +3,18 @@ import numpy as np
 import open3d as o3d
 import datetime
 
-def icp_core(point_cloud1, point_cloud2):
+def icp_core(points_ref, points_newscan):
     """
-    Solve transformation from point_cloud2 to point_cloud1, T1_2
-    :param point_cloud1: numpy array, size = n x 3, n is num of point
-    :param point_cloud2: numpy array, size = n x 3, n is num of point
+    Solve transformation from points_newscan to points_ref, T1_2
+    :param points_ref: numpy array, size = n x 3, n is num of point
+    :param points_newscan: numpy array, size = n x 3, n is num of point
     :return: transformation matrix T, size = 4x4
     
     Note: point cloud should be in same size. Point with same index are corresponding points.
-          For example, point_cloud1[i] and point_cloud2[i] are a pair of cooresponding points.
+          For example, points_ref[i] and points_newscan[i] are a pair of cooresponding points.
     
     """
-    assert point_cloud1.shape == point_cloud2.shape, 'point cloud size not match'
+    assert points_ref.shape == points_newscan.shape, 'point cloud size not match'
     
     T1_2 = np.eye(4)
     # TODO: Finish icp based on SVD, you can refer the lecture slides. Please leave comments and explainations for each step.
@@ -22,27 +22,27 @@ def icp_core(point_cloud1, point_cloud2):
     return T1_2
 
 
-def solve_icp_with_known_correspondence(point_cloud1, point_cloud2):
+def solve_icp_with_known_correspondence(points_ref, points_newscan):
     # Solve for transformation matrix
-    T1_2 = icp_core(point_cloud1, point_cloud2)
+    T1_2 = icp_core(points_ref, points_newscan)
     print('------------ transformation matrix T1_2 ------------')
     print(T1_2)
 
-    # TODO: calculate transformed point_cloud2 based on T1_2 solved above
-    point_cloud2_transformed = 
+    # TODO: calculate transformed points_newscan based on T1_2 solved above
+    # points_newscan_transformed = 
 
     # Visualization
-    mean_distance = mean_dist(point_cloud2_transformed, point_cloud1)
+    mean_distance = mean_dist(points_newscan_transformed, points_ref)
     print('mean_error= ' + str(mean_distance))
 
     axis_pcd = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10, origin=[0, 0, 0])
     
     pcd1 = o3d.geometry.PointCloud()
-    pcd1.points = o3d.utility.Vector3dVector(point_cloud1)
+    pcd1.points = o3d.utility.Vector3dVector(points_ref)
     pcd2 = o3d.geometry.PointCloud()
-    pcd2.points = o3d.utility.Vector3dVector(point_cloud2)
+    pcd2.points = o3d.utility.Vector3dVector(points_newscan)
     pcd2_transformed = o3d.geometry.PointCloud()
-    pcd2_transformed.points = o3d.utility.Vector3dVector(point_cloud2_transformed)
+    pcd2_transformed.points = o3d.utility.Vector3dVector(points_newscan_transformed)
     
     pcd1.paint_uniform_color([1, 0, 0])  # Red for reference cloud
     pcd2.paint_uniform_color([0, 1, 0])  # Green for original cloud
@@ -51,14 +51,14 @@ def solve_icp_with_known_correspondence(point_cloud1, point_cloud2):
     o3d.visualization.draw_geometries([pcd1, pcd2, pcd2_transformed, axis_pcd])
 
 
-def solve_icp_without_known_correspondence(point_cloud1, point_cloud2, n_iter, threshold):
-    point_cloud2_temp = point_cloud2.copy()
+def solve_icp_without_known_correspondence(points_ref, points_newscan, n_iter, threshold):
+    points_newscan_temp = points_newscan.copy()
     T_1_2accumulated = np.eye(4)
 
     # viz
     axis_pcd = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10, origin=[0, 0, 0])
     pcd1 = o3d.geometry.PointCloud()
-    pcd1.points = o3d.utility.Vector3dVector(point_cloud1)
+    pcd1.points = o3d.utility.Vector3dVector(points_ref)
     pcd1.paint_uniform_color([0, 0, 1])
     vis = o3d.visualization.Visualizer()
     vis.create_window()
@@ -71,18 +71,18 @@ def solve_icp_without_known_correspondence(point_cloud1, point_cloud2, n_iter, t
         start_time = datetime.datetime.now()
         
         # TODO: Try to estimate correspondence of points between 2 point clouds, 
-        #       and reindex point_cloud2 based on your estimated correspondence
-        point_cloud2_reordered = 
+        #       and reindex points_newscan based on your estimated correspondence
+        # points_newscan_reordered = 
             
         # Solve ICP for current iteration
-        T1_2_cur = icp_core(point_cloud1, point_cloud2_reordered)
+        T1_2_cur = icp_core(points_ref, points_newscan_reordered)
         
         end_time = datetime.datetime.now()
         time_difference = (end_time - start_time).total_seconds()
         total_time_cost += time_difference
         
         # TODO: Update accumulated transformation
-        T_1_2accumulated = 
+        # T_1_2accumulated = 
         
         print('-----------------------------------------')
         print('iteration = ' + str(i+1))
@@ -94,14 +94,14 @@ def solve_icp_without_known_correspondence(point_cloud1, point_cloud2, n_iter, t
         print(T_1_2accumulated)
         
         # TODO: Update point cloud2 using transform from current iteration
-        point_cloud2_temp = 
+        # points_newscan_temp = 
         
-        mean_distance = mean_dist(point_cloud1, point_cloud2_temp)
+        mean_distance = mean_dist(points_ref, points_newscan_temp)
         print('mean_error= ' + str(mean_distance))
 
         # Update visualization
         pcd2_transed = o3d.geometry.PointCloud()
-        pcd2_transed.points = o3d.utility.Vector3dVector(point_cloud2_temp)
+        pcd2_transed.points = o3d.utility.Vector3dVector(points_newscan_temp)
         pcd2_transed.paint_uniform_color([1, 0, 0])
         vis.add_geometry(pcd2_transed)
         vis.poll_events()
@@ -121,7 +121,7 @@ def solve_icp_without_known_correspondence(point_cloud1, point_cloud2, n_iter, t
     
     # Final visualization
     pcd2_final = o3d.geometry.PointCloud()
-    pcd2_final.points = o3d.utility.Vector3dVector(point_cloud2_temp)
+    pcd2_final.points = o3d.utility.Vector3dVector(points_newscan_temp)
     pcd2_final.paint_uniform_color([1, 0, 0])
     o3d.visualization.draw_geometries([axis_pcd, pcd1, pcd2_final])
 

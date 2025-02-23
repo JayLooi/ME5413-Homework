@@ -17,7 +17,27 @@ def icp_core(points_ref, points_newscan):
     assert points_ref.shape == points_newscan.shape, 'point cloud size not match'
     
     T1_2 = np.eye(4)
-    # TODO: Finish icp based on SVD, you can refer the lecture slides. Please leave comments and explainations for each step.
+
+    # Compute centroids of points_ref and points_newscan
+    centroid_ref = np.average(points_ref, axis=0)
+    centroid_newscan = np.average(points_newscan, axis=0)
+
+    # Zero-centering points_ref and points_newscan
+    zero_ctr_pts_ref = points_ref - centroid_ref
+    zero_ctr_pts_newscan = points_newscan - centroid_newscan
+
+    # Define matrix H for which the rotation matrix (R) to be obtained by maximising Trace(RH)
+    H = zero_ctr_pts_newscan.T @ zero_ctr_pts_ref
+
+    # Get the rotation matrix (R) from the resulting components of SVD on matrix H
+    U, S, Vh = np.linalg.svd(H)
+    R = Vh.T @ U
+
+    # Get the translation vector (t)
+    t = centroid_ref - R @ centroid_newscan
+
+    T1_2[:3, :3] = R
+    T1_2[:3, 3] = t
     
     return T1_2
 

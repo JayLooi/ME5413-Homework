@@ -48,8 +48,11 @@ def solve_icp_with_known_correspondence(points_ref, points_newscan):
     print('------------ transformation matrix T1_2 ------------')
     print(T1_2)
 
-    # TODO: calculate transformed points_newscan based on T1_2 solved above
-    # points_newscan_transformed = 
+    # Make the points_newscan into homogeneous coordinates and apply the transformation T1_2
+    n_row = points_newscan.shape[0]
+    pts_newscan_h = np.hstack((points_newscan, np.ones((n_row, 1)))).T
+    points_newscan_transformed = T1_2 @ pts_newscan_h
+    points_newscan_transformed = points_newscan_transformed.T[:, :3]
 
     # Visualization
     mean_distance = mean_dist(points_newscan_transformed, points_ref)

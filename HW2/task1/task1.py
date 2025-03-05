@@ -3,6 +3,7 @@ import numpy as np
 import open3d as o3d
 import datetime
 
+
 def icp_core(points_ref, points_newscan):
     """
     Solve transformation from points_newscan to points_ref, T1_2
@@ -31,7 +32,7 @@ def icp_core(points_ref, points_newscan):
 
     # Get the rotation matrix (R) from the resulting components of SVD on matrix H
     U, S, Vh = np.linalg.svd(H)
-    R = Vh.T @ U
+    R = Vh.T @ U.T
 
     # Get the translation vector (t)
     t = centroid_ref - R @ centroid_newscan
@@ -92,11 +93,16 @@ def solve_icp_without_known_correspondence(points_ref, points_newscan, n_iter, t
 
     for i in range(n_iter):
         start_time = datetime.datetime.now()
-        
-        # TODO: Try to estimate correspondence of points between 2 point clouds, 
-        #       and reindex points_newscan based on your estimated correspondence
-        # points_newscan_reordered = 
-            
+
+        # Use KD-tree for more efficient searching of nearest neighbour
+        points_ref_kdtree = o3d.geometry.KDTreeFlann(pcd1)
+        points_newscan_reordered = np.zeros_like(points_newscan_temp)
+
+        # Iterate over all newscan points to find the corresponding closest points in reference point cloud
+        for j, pt in enumerate(points_newscan_temp):
+            _, idx, _ = points_ref_kdtree.search_knn_vector_3d(pt, 1)
+            points_newscan_reordered[j] = points_ref[idx[0]]
+
         # Solve ICP for current iteration
         T1_2_cur = icp_core(points_ref, points_newscan_reordered)
         
@@ -104,8 +110,9 @@ def solve_icp_without_known_correspondence(points_ref, points_newscan, n_iter, t
         time_difference = (end_time - start_time).total_seconds()
         total_time_cost += time_difference
         
-        # TODO: Update accumulated transformation
-        # T_1_2accumulated = 
+        # Update the the homeogeneous transformation matrix that describes the
+        # transformation from points_newscan to points_ref
+        T_1_2accumulated = T1_2_cur @ T_1_2accumulated
         
         print('-----------------------------------------')
         print('iteration = ' + str(i+1))
@@ -116,8 +123,11 @@ def solve_icp_without_known_correspondence(points_ref, points_newscan, n_iter, t
         print('accumulated T = ')
         print(T_1_2accumulated)
         
-        # TODO: Update point cloud2 using transform from current iteration
-        # points_newscan_temp = 
+        # Make the points_newscan_temp into homogeneous coordinates and apply the transformation T1_2_cur
+        n_row = points_newscan_temp.shape[0]
+        pts_newscan_h = np.hstack((points_newscan_temp, np.ones((n_row, 1)))).T
+        points_newscan_transformed = T1_2_cur @ pts_newscan_h
+        points_newscan_temp = points_newscan_transformed.T[:, :3]
         
         mean_distance = mean_dist(points_ref, points_newscan_temp)
         print('mean_error= ' + str(mean_distance))
@@ -148,6 +158,7 @@ def solve_icp_without_known_correspondence(points_ref, points_newscan, n_iter, t
     pcd2_final.paint_uniform_color([1, 0, 0])
     o3d.visualization.draw_geometries([axis_pcd, pcd1, pcd2_final])
 
+
 def mean_dist(point_cloud1, point_cloud2):
     dis_array = []
     for i in range(point_cloud1.shape[0]):
@@ -156,6 +167,7 @@ def mean_dist(point_cloud1, point_cloud2):
         dis_array.append(dis)
         
     return np.mean(np.array(dis_array))
+
 
 def main(task, data_dir):
     print('start hw program')

@@ -1,0 +1,4 @@
+numpy==1.23
+jupyter-packaging==0.11.0
+jupyter-client==7.4.9
+open3d==0.13.0

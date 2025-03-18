@@ -2,4 +2,14 @@ __pycache__
 *.pdf
 *.zip
 results
-HW1/virtualenv
+*/virtualenv
+HW1/01_Single_Object_Tracking/data
+HW1/01_Single_Object_Tracking/detr-resnet-50
+HW1/02_Multi_Object_Prediction/task2_data
+HW1/02_Multi_Object_Prediction/visualization
+HW1/03_SOT_In_ROS/rosbags
+HW2/task1/student_data
+
+build/
+devel/
+temp/

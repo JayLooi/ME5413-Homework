@@ -96,15 +96,23 @@ def solve_icp_without_known_correspondence(points_ref, points_newscan, n_iter, t
 
         # Use KD-tree for more efficient searching of nearest neighbour
         points_ref_kdtree = o3d.geometry.KDTreeFlann(pcd1)
-        points_newscan_reordered = np.zeros_like(points_newscan_temp)
+        points_ref_corresponded = np.zeros_like(points_ref)
+
+        # Transform the new scan point cloud such that its centroid aligns with that of reference point cloud
+        # Reference of this approach:
+        #   - YouTube video: ICP & Point Cloud Registration - Part 2: Unknown Data Association (Cyrill Stachniss, 2021)
+        #   - URL: https://youtu.be/ktRqKxddjJk?t=1645
+        centroid_ref = np.average(points_ref, axis=0)
+        centroid_newscan = np.average(points_newscan_temp, axis=0)
+        points_newscan_centroid_ref_aligned = points_newscan_temp - centroid_newscan + centroid_ref
 
         # Iterate over all newscan points to find the corresponding closest points in reference point cloud
-        for j, pt in enumerate(points_newscan_temp):
+        for j, pt in enumerate(points_newscan_centroid_ref_aligned):
             _, idx, _ = points_ref_kdtree.search_knn_vector_3d(pt, 1)
-            points_newscan_reordered[j] = points_ref[idx[0]]
+            points_ref_corresponded[j] = points_ref[idx[0]]
 
         # Solve ICP for current iteration
-        T1_2_cur = icp_core(points_ref, points_newscan_reordered)
+        T1_2_cur = icp_core(points_ref_corresponded, points_newscan_temp)
         
         end_time = datetime.datetime.now()
         time_difference = (end_time - start_time).total_seconds()
@@ -183,7 +191,7 @@ def main(task, data_dir):
     if task == 1:
         solve_icp_with_known_correspondence(points_ref, points_newscan)
     elif task == 2:
-        solve_icp_without_known_correspondence(points_ref, points_newscan, n_iter=30, threshold=0.1)
+        solve_icp_without_known_correspondence(points_ref, points_newscan, n_iter=60, threshold=0.1)
 
 
 if __name__ == '__main__':

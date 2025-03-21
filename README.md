@@ -2,5 +2,5 @@
 > Completed by: Looi Kian Seong
 
 - [x] HW1 - Perception
-- [ ] HW2 - Localisation
+- [x] HW2 - Localisation
 - [ ] HW3 - Planning

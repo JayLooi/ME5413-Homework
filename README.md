@@ -3,4 +3,4 @@
 
 - [x] HW1 - Perception
 - [x] HW2 - Localisation
-- [ ] HW3 - Planning
+- [x] HW3 - Planning

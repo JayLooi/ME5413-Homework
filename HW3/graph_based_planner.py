@@ -140,6 +140,7 @@ class GraphBasedPlanner:
             curr_node = queue.pop()
             curr_node_idx = curr_node.idx
 
+            # Ensure each node visited only once
             if curr_node_idx in visited:
                 continue
 

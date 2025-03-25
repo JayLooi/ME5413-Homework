@@ -29,7 +29,10 @@ class _NodeQueue(list):
 
     def pop(self):
         node = heapq.heappop(self)
-        del self.cost_f_list[node.idx]
+
+        if node.idx in self.cost_f_list:
+            del self.cost_f_list[node.idx]
+
         return node
 
     def update(self, node):
@@ -135,8 +138,11 @@ class GraphBasedPlanner:
 
         while queue:
             curr_node = queue.pop()
-            curr_node_idx = self._get_flatten_index(curr_node.pos[1], 
-                                                    curr_node.pos[0])
+            curr_node_idx = curr_node.idx
+
+            if curr_node_idx in visited:
+                continue
+
             visited[curr_node_idx] = curr_node
 
             if tuple(curr_node.pos) == tuple(goal):
@@ -161,9 +167,9 @@ class GraphBasedPlanner:
                     neighbour = self._create_node((col, row), cost, 
                                                   curr_node_idx)
 
-                    if neighbour_idx not in queue:
+                    if neighbour_idx not in queue or neighbour.cost_f < queue.cost_f_list[neighbour_idx]:
                         queue.push(neighbour)
 
-                    else:
-                        if neighbour.cost_f < queue.cost_f_list[neighbour_idx]:
-                            queue.update(neighbour)
+                    # else:
+                    #     if neighbour.cost_f < queue.cost_f_list[neighbour_idx]:
+                    #         queue.update(neighbour)
